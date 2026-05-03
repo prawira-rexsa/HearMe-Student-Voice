@@ -25,14 +25,29 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     setState(() => isLoading = true);
-    bool success = await AuthService.login(npm, password);
+    final messenger = ScaffoldMessenger.of(context);
+    bool success = false;
+    try {
+      success = await AuthService.login(npm, password);
+    } catch (_) {
+      // propagate as failure
+    }
+    if (!mounted) return;
     setState(() => isLoading = false);
 
     if (success) {
       String route = (AuthService.role == 'admin') ? '/admin' : '/home';
       Navigator.pushReplacementNamed(context, route);
     } else {
-      _showCustomSnackBar("NPM atau Password salah", Colors.redAccent);
+      messenger.showSnackBar(
+        SnackBar(
+          content: const Text("NPM atau Password salah"),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
     }
   }
 
@@ -51,7 +66,6 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Menggunakan Stack agar background bisa fullscreen
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -59,7 +73,7 @@ class _LoginPageState extends State<LoginPage> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF667EEA), Color(0xFF764BA2)], // Modern Purple-Blue
+            colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
           ),
         ),
         child: SafeArea(
@@ -68,7 +82,6 @@ class _LoginPageState extends State<LoginPage> {
               padding: const EdgeInsets.symmetric(horizontal: 30),
               child: Column(
                 children: [
-                  // ICON / LOGO Placeholder
                   const Icon(Icons.forum_rounded, size: 80, color: Colors.white),
                   const SizedBox(height: 16),
                   const Text(
@@ -90,7 +103,7 @@ class _LoginPageState extends State<LoginPage> {
                   Container(
                     padding: const EdgeInsets.all(28),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.95),
+                      color: const Color(0xF2FFFFFF),
                       borderRadius: BorderRadius.circular(28),
                       boxShadow: const [
                         BoxShadow(
@@ -113,7 +126,6 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         const SizedBox(height: 20),
                         
-                        // NPM FIELD
                         _buildTextField(
                           controller: npmController,
                           label: "NPM",
@@ -122,7 +134,6 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         const SizedBox(height: 18),
                         
-                        // PASSWORD FIELD
                         _buildTextField(
                           controller: passwordController,
                           label: "Password",
@@ -143,7 +154,7 @@ class _LoginPageState extends State<LoginPage> {
                                     backgroundColor: const Color(0xFF764BA2),
                                     foregroundColor: Colors.white,
                                     elevation: 5,
-                                    shadowColor: Colors.purple.withOpacity(0.4),
+                                    shadowColor: const Color(0x66764BA2),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(15),
                                     ),
@@ -158,6 +169,23 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                 ),
                               ),
+                        
+                        // TOMBOL KE HALAMAN DAFTAR
+                        const SizedBox(height: 10),
+                        Center(
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/register');
+                            },
+                            child: const Text(
+                              "Belum punya akun? Daftar di sini",
+                              style: TextStyle(
+                                color: Color(0xFF764BA2),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -175,7 +203,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // Widget Helper untuk merapikan kode TextField
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -211,5 +238,12 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    npmController.dispose();
+    passwordController.dispose();
+    super.dispose();
   }
 }

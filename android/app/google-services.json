@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "732643095648",
+    "project_id": "hearme-app-123",
+    "storage_bucket": "hearme-app-123.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:732643095648:android:623f9ee61f1cc257b43f05",
+        "android_client_info": {
+          "package_name": "com.example.hearme_student_voice"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDut2ZKzQdyWZOAYc_Ia0BIyrkbqUUTVY8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
