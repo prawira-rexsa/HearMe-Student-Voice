@@ -31,23 +31,27 @@ class _AdminPageState extends State<AdminPage> {
 
   Future<void> _approve(Complaint c) async {
     if (c.id == null) return;
+    final messenger = ScaffoldMessenger.of(context);
     try {
       await ApiService.updateComplaint(c.id!, true);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Keluhan di-approve')));
+      messenger.showSnackBar(const SnackBar(content: Text('Keluhan di-approve')));
+      if (!mounted) return;
       await _refresh();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal approve: $e')));
+      messenger.showSnackBar(SnackBar(content: Text('Gagal approve: $e')));
     }
   }
 
   Future<void> _reject(Complaint c) async {
     if (c.id == null) return;
+    final messenger = ScaffoldMessenger.of(context);
     try {
       await ApiService.deleteComplaint(c.id!);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Keluhan dihapus')));
+      messenger.showSnackBar(const SnackBar(content: Text('Keluhan dihapus')));
+      if (!mounted) return;
       await _refresh();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal hapus: $e')));
+      messenger.showSnackBar(SnackBar(content: Text('Gagal hapus: $e')));
     }
   }
 
