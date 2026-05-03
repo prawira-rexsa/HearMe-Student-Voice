@@ -20,7 +20,6 @@ class AuthService {
           role = data['role'];
           currentNpm = npm;
 
-          // simpan ke local
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('role', role!);
           await prefs.setString('npm', npm);
@@ -69,7 +68,9 @@ class AuthService {
   // ================= LOGOUT =================
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+
+    await prefs.remove('role');
+    await prefs.remove('npm');
 
     role = null;
     currentNpm = null;
