@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
-import 'services/auth_service.dart';
 import 'screens/login_page.dart';
 import 'screens/home_page.dart';
 import 'screens/admin_page.dart';
 import 'screens/register_page.dart';
+import 'screens/splash_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,8 +14,6 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
-  await AuthService.loadSession();
 
   runApp(const MyApp());
 }
@@ -30,18 +28,10 @@ class MyApp extends StatelessWidget {
       title: 'HearMe',
       theme: ThemeData(useMaterial3: true),
 
-      initialRoute: '/',
+      initialRoute: '/splash',
 
       routes: {
-        '/': (context) {
-          if (AuthService.role == 'admin') {
-            return const AdminPage();
-          } else if (AuthService.role != null) {
-            return const HomePage();
-          } else {
-            return const LoginPage();
-          }
-        },
+        '/splash': (context) => const SplashPage(),
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
         '/home': (context) => const HomePage(),
