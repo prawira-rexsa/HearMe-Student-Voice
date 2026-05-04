@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../models/complaint.dart';
 
@@ -11,54 +12,370 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late Future<List<Complaint>> complaints;
+  late TextEditingController titleController;
+  late TextEditingController descriptionController;
 
   @override
   void initState() {
     super.initState();
     complaints = ApiService.getComplaints();
+    titleController = TextEditingController();
+    descriptionController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    descriptionController.dispose();
+    super.dispose();
+  }
+
+  void handleLogout() async {
+    await AuthService.logout();
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+  }
+
+  Future<void> _refreshComplaints() async {
+    if (!mounted) return;
+    setState(() {
+      complaints = ApiService.getComplaints();
+    });
+    await complaints;
+  }
+
+  // --- MODAL TAMBAH KELUHAN (VERSI MODERN) ---
+  Future<void> _showAddComplaintDialog() async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    final result = await showModalBottomSheet<Map<String, String>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent, // Agar background rounded terlihat
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          top: 32,
+          left: 24,
+          right: 24,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                "Buat Keluhan Baru",
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "Sampaikan aspirasi atau kendala Anda. Admin akan meninjau sebelum dipublikasikan.",
+                style: TextStyle(color: Colors.grey, fontSize: 14),
+              ),
+              const SizedBox(height: 24),
+              TextField(
+                controller: titleController,
+                decoration: InputDecoration(
+                  labelText: "Judul Keluhan",
+                  prefixIcon: const Icon(Icons.title_rounded),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: descriptionController,
+                maxLines: 4,
+                decoration: InputDecoration(
+                  labelText: "Deskripsi Lengkap",
+                  alignLabelWithHint: true,
+                  prefixIcon: const Padding(
+                    padding: EdgeInsets.only(bottom: 60),
+                    child: Icon(Icons.description_rounded),
+                  ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF764BA2),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
+                  ),
+                  onPressed: () {
+                    final title = titleController.text.trim();
+                    final desc = descriptionController.text.trim();
+                    if (title.isEmpty || desc.isEmpty) {
+                      messenger.showSnackBar(
+                        const SnackBar(content: Text("Harap isi semua kolom")),
+                      );
+                      return;
+                    }
+                    Navigator.pop(context, {'title': title, 'description': desc});
+                  },
+                  child: const Text(
+                    "Kirim Keluhan",
+                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (result != null) {
+      await ApiService.createComplaint(
+        Complaint(
+          title: result['title']!,
+          description: result['description']!,
+          status: false,
+        ),
+      );
+      if (mounted) {
+        _refreshComplaints();
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text("Berhasil! Keluhan sedang menunggu persetujuan."),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+    
+    // Clear controllers for next use
+    titleController.clear();
+    descriptionController.clear();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Public Board"),
-      ),
-      body: FutureBuilder<List<Complaint>>(
-        future: complaints,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(child: Text(snapshot.error.toString()));
-          }
-
-          final data = snapshot.data!
-              .where((item) => item.status == true)
-              .toList();
-
-          if (data.isEmpty) {
-            return const Center(child: Text("Belum ada keluhan"));
-          }
-
-          return ListView.builder(
-            itemCount: data.length,
-            itemBuilder: (context, index) {
-              final item = data[index];
-
-              return Card(
-                margin: const EdgeInsets.all(10),
-                child: ListTile(
-                  title: Text(item.title),
-                  subtitle: Text(item.description),
-                  trailing: const Icon(Icons.check_circle, color: Colors.green),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+          ),
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              // --- HEADER SECTION ---
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.14),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.white.withOpacity(0.18)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(Icons.forum_rounded, color: Colors.white, size: 28),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'HearMe',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'User: ${AuthService.currentNpm ?? 'Mahasiswa'}',
+                              style: const TextStyle(color: Colors.white70, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                        onPressed: _refreshComplaints,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.logout_rounded, color: Colors.white),
+                        onPressed: handleLogout,
+                      ),
+                    ],
+                  ),
                 ),
-              );
-            },
-          );
-        },
+              ),
+
+              // --- CONTENT SECTION ---
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF8F9FE),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(Icons.public_rounded, color: Color(0xFF764BA2)),
+                              SizedBox(width: 10),
+                              Text(
+                                'Keluhan Publik',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF111827),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Expanded(
+                            child: FutureBuilder<List<Complaint>>(
+                              future: complaints,
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState == ConnectionState.waiting) {
+                                  return const Center(child: CircularProgressIndicator());
+                                }
+
+                                final data = snapshot.data?.where((e) => e.status == true).toList() ?? [];
+
+                                if (data.isEmpty) {
+                                  return RefreshIndicator(
+                                    onRefresh: _refreshComplaints,
+                                    child: ListView(
+                                      physics: const AlwaysScrollableScrollPhysics(),
+                                      children: [
+                                        SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+                                        const Center(
+                                          child: Text(
+                                            'Belum ada keluhan publik saat ini',
+                                            style: TextStyle(color: Colors.grey),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }
+
+                                return RefreshIndicator(
+                                  onRefresh: _refreshComplaints,
+                                  child: ListView.separated(
+                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    padding: const EdgeInsets.only(bottom: 100), // Padding FAB
+                                    itemCount: data.length,
+                                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                                    itemBuilder: (context, index) {
+                                      return _buildComplaintCard(data[index]);
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _showAddComplaintDialog,
+        backgroundColor: const Color(0xFF764BA2),
+        elevation: 4,
+        icon: const Icon(Icons.add_comment_rounded, color: Colors.white),
+        label: const Text(
+          'Buat Keluhan',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildComplaintCard(Complaint item) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: const Color(0xFF764BA2).withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.campaign_rounded, color: Color(0xFF764BA2)),
+        ),
+        title: Text(
+          item.title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: Color(0xFF111827),
+          ),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            item.description,
+            style: const TextStyle(color: Color(0xFF4B5563), height: 1.4),
+          ),
+        ),
       ),
     );
   }
