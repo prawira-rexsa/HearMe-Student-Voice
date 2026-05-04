@@ -33,7 +33,10 @@ class _AdminPageState extends State<AdminPage> {
   }
 
   void deleteItem(String id) async {
-    bool confirm = await _showConfirmDialog("Hapus", "Yakin ingin menghapus keluhan ini?");
+    bool confirm = await _showConfirmDialog(
+      "Hapus",
+      "Yakin ingin menghapus keluhan ini?",
+    );
     if (confirm) {
       await ApiService.deleteComplaint(id);
       loadData();
@@ -64,7 +67,10 @@ class _AdminPageState extends State<AdminPage> {
             title: Text(title),
             content: Text(content),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Batal")),
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text("Batal"),
+              ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
                 child: Text(title, style: const TextStyle(color: Colors.red)),
@@ -112,7 +118,11 @@ class _AdminPageState extends State<AdminPage> {
                           color: Colors.white.withOpacity(0.18),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Icon(Icons.admin_panel_settings, color: Colors.white, size: 28),
+                        child: const Icon(
+                          Icons.admin_panel_settings,
+                          color: Colors.white,
+                          size: 28,
+                        ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -129,8 +139,11 @@ class _AdminPageState extends State<AdminPage> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'NPM: ${AuthService.currentNpm ?? '-'}',
-                              style: const TextStyle(color: Colors.white70, fontSize: 13),
+                              '${AuthService.currentNpm ?? '-'}',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
                             ),
                           ],
                         ),
@@ -140,7 +153,10 @@ class _AdminPageState extends State<AdminPage> {
                         onPressed: loadData,
                       ),
                       IconButton(
-                        icon: const Icon(Icons.logout_rounded, color: Colors.white),
+                        icon: const Icon(
+                          Icons.logout_rounded,
+                          color: Colors.white,
+                        ),
                         onPressed: logout,
                       ),
                     ],
@@ -154,10 +170,14 @@ class _AdminPageState extends State<AdminPage> {
                   width: double.infinity,
                   decoration: const BoxDecoration(
                     color: Color(0xFFF8F9FE),
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(32),
+                    ),
                   ),
                   child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(32),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
                       child: Column(
@@ -165,7 +185,10 @@ class _AdminPageState extends State<AdminPage> {
                         children: [
                           Row(
                             children: const [
-                              Icon(Icons.inbox_rounded, color: Color(0xFF764BA2)),
+                              Icon(
+                                Icons.inbox_rounded,
+                                color: Color(0xFF764BA2),
+                              ),
                               SizedBox(width: 10),
                               Text(
                                 'Keluhan Masuk',
@@ -178,28 +201,41 @@ class _AdminPageState extends State<AdminPage> {
                             ],
                           ),
                           const SizedBox(height: 16),
-                          
+
                           // Bagian list yang ditarik maksimal oleh Expanded
                           Expanded(
                             child: FutureBuilder<List<Complaint>>(
                               future: data,
                               builder: (context, snapshot) {
-                                if (snapshot.connectionState == ConnectionState.waiting) {
-                                  return const Center(child: CircularProgressIndicator());
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
                                 }
 
                                 // Handle jika data kosong atau error
-                                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                if (!snapshot.hasData ||
+                                    snapshot.data!.isEmpty) {
                                   return RefreshIndicator(
                                     onRefresh: () async => loadData(),
                                     child: ListView(
-                                      physics: const AlwaysScrollableScrollPhysics(),
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
                                       children: [
                                         SizedBox(
-                                          height: MediaQuery.of(context).size.height * 0.4,
+                                          height:
+                                              MediaQuery.of(
+                                                context,
+                                              ).size.height *
+                                              0.4,
                                           child: const Center(
-                                            child: Text('Tidak ada data keluhan masuk', 
-                                              style: TextStyle(color: Colors.grey)),
+                                            child: Text(
+                                              'Tidak ada data keluhan masuk',
+                                              style: TextStyle(
+                                                color: Colors.grey,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -211,15 +247,20 @@ class _AdminPageState extends State<AdminPage> {
                                 return RefreshIndicator(
                                   onRefresh: () async => loadData(),
                                   child: ListView.separated(
-                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
                                     padding: const EdgeInsets.only(bottom: 24),
                                     itemCount: list.length,
-                                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                                    separatorBuilder: (_, __) =>
+                                        const SizedBox(height: 12),
                                     itemBuilder: (context, index) {
                                       final item = list[index];
                                       final isApproved = item.status;
 
-                                      return _buildComplaintCard(item, isApproved);
+                                      return _buildComplaintCard(
+                                        item,
+                                        isApproved,
+                                      );
                                     },
                                   ),
                                 );
@@ -256,10 +297,12 @@ class _AdminPageState extends State<AdminPage> {
       ),
       child: ExpansionTile(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        collapsedShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+        ),
         leading: CircleAvatar(
-          backgroundColor: isApproved 
-              ? Colors.green.withOpacity(0.12) 
+          backgroundColor: isApproved
+              ? Colors.green.withOpacity(0.12)
               : Colors.orange.withOpacity(0.12),
           child: Icon(
             isApproved ? Icons.verified : Icons.pending_actions,
@@ -287,10 +330,20 @@ class _AdminPageState extends State<AdminPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Divider(),
+                Text(
+                  'Pengirim: ${item.npm ?? "Anonim (Data Lama)"}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF764BA2),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 const Text(
                   'Isi Keluhan:',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF6B7280)),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF6B7280),
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -302,18 +355,27 @@ class _AdminPageState extends State<AdminPage> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton.icon(
-                      onPressed: item.id != null ? () => deleteItem(item.id!) : null,
+                      onPressed: item.id != null
+                          ? () => deleteItem(item.id!)
+                          : null,
                       icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      label: const Text('Hapus', style: TextStyle(color: Colors.red)),
+                      label: const Text(
+                        'Hapus',
+                        style: TextStyle(color: Colors.red),
+                      ),
                     ),
                     const SizedBox(width: 10),
                     if (!isApproved)
                       ElevatedButton.icon(
-                        onPressed: item.id != null ? () => approveItem(item.id!) : null,
+                        onPressed: item.id != null
+                            ? () => approveItem(item.id!)
+                            : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF764BA2),
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         icon: const Icon(Icons.check),
                         label: const Text('Approve'),

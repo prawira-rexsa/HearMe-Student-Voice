@@ -3,7 +3,8 @@ import 'package:http/http.dart' as http;
 import '../models/complaint.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://69f4355ebd2396bf5310ad9f.mockapi.io/api/v1/complaint';
+  static const String baseUrl =
+      'https://69f4355ebd2396bf5310ad9f.mockapi.io/api/v1/complaint';
 
   // GET all
   static Future<List<Complaint>> getComplaints() async {

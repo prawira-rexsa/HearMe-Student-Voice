@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
@@ -28,7 +29,13 @@ class _LoginPageState extends State<LoginPage> {
     final messenger = ScaffoldMessenger.of(context);
     bool success = false;
     try {
+      // Percobaan 1: Coba login dengan format bertitik (untuk akun baru)
       success = await AuthService.login(npm, password);
+
+      // Percobaan 2: Jika gagal, coba hilangkan titiknya (untuk akun lama seperti 12345 yang terformat jadi 12.345)
+      if (!success && npm.contains('.')) {
+        success = await AuthService.login(npm.replaceAll('.', ''), password);
+      }
     } catch (_) {
       // propagate as failure
     }
@@ -41,10 +48,14 @@ class _LoginPageState extends State<LoginPage> {
     } else {
       messenger.showSnackBar(
         SnackBar(
-          content: const Text("NPM atau Password salah"),
+          content: Text(
+            "Gagal! Mencari: '$npm' dan '${npm.replaceAll('.', '')}'",
+          ),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -82,7 +93,11 @@ class _LoginPageState extends State<LoginPage> {
               padding: const EdgeInsets.symmetric(horizontal: 30),
               child: Column(
                 children: [
-                  const Icon(Icons.forum_rounded, size: 80, color: Colors.white),
+                  const Icon(
+                    Icons.forum_rounded,
+                    size: 80,
+                    color: Colors.white,
+                  ),
                   const SizedBox(height: 16),
                   const Text(
                     "HearMe",
@@ -110,7 +125,7 @@ class _LoginPageState extends State<LoginPage> {
                           color: Colors.black26,
                           blurRadius: 20,
                           offset: Offset(0, 10),
-                        )
+                        ),
                       ],
                     ),
                     child: Column(
@@ -125,15 +140,21 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        
+
                         _buildTextField(
                           controller: npmController,
                           label: "NPM",
                           icon: Icons.person_outline,
                           type: TextInputType.number,
+                          formatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'[0-9.]'),
+                            ),
+                            NpmInputFormatter(),
+                          ],
                         ),
                         const SizedBox(height: 18),
-                        
+
                         _buildTextField(
                           controller: passwordController,
                           label: "Password",
@@ -169,7 +190,7 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                 ),
                               ),
-                        
+
                         // TOMBOL KE HALAMAN DAFTAR
                         const SizedBox(height: 10),
                         Center(
@@ -193,7 +214,7 @@ class _LoginPageState extends State<LoginPage> {
                   const Text(
                     "© 2026 HearMe Team",
                     style: TextStyle(color: Colors.white60, fontSize: 12),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -209,11 +230,13 @@ class _LoginPageState extends State<LoginPage> {
     required IconData icon,
     bool isPassword = false,
     TextInputType type = TextInputType.text,
+    List<TextInputFormatter>? formatters,
   }) {
     return TextField(
       controller: controller,
       obscureText: isPassword ? isPasswordHidden : false,
       keyboardType: type,
+      inputFormatters: formatters,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, color: const Color(0xFF764BA2)),
@@ -223,7 +246,8 @@ class _LoginPageState extends State<LoginPage> {
                   isPasswordHidden ? Icons.visibility_off : Icons.visibility,
                   color: Colors.grey,
                 ),
-                onPressed: () => setState(() => isPasswordHidden = !isPasswordHidden),
+                onPressed: () =>
+                    setState(() => isPasswordHidden = !isPasswordHidden),
               )
             : null,
         filled: true,
@@ -245,5 +269,30 @@ class _LoginPageState extends State<LoginPage> {
     npmController.dispose();
     passwordController.dispose();
     super.dispose();
+  }
+}
+
+class NpmInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final newText = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (newText.length > 13) return oldValue;
+
+    var buffer = StringBuffer();
+    for (int i = 0; i < newText.length; i++) {
+      if (i == 2 || i == 6 || i == 7) {
+        buffer.write('.');
+      }
+      buffer.write(newText[i]);
+    }
+
+    String formatted = buffer.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
   }
 }

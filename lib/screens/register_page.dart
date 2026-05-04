@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -21,6 +22,12 @@ class _RegisterPageState extends State<RegisterPage> {
 
     if (npm.isEmpty || password.isEmpty) {
       _showCustomSnackBar("Semua kolom wajib diisi", Colors.orange);
+      return;
+    }
+
+    // Validasi format NPM (hanya angka dan titik, dengan pola 2.4.1.5-6)
+    if (!RegExp(r'^\d{2}\.\d{4}\.\d{1}\.\d{5,6}$').hasMatch(npm)) {
+      _showCustomSnackBar("Format NPM salah. Gunakan pola: 00.0000.0.00000", Colors.orange);
       return;
     }
 
@@ -143,6 +150,10 @@ class _RegisterPageState extends State<RegisterPage> {
                               // Ganti ikon agar beda dikit dengan login (opsional)
                               icon: Icons.badge_outlined, 
                               type: TextInputType.number,
+                              formatters: [
+                                FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                                NpmInputFormatter(),
+                              ],
                             ),
                             const SizedBox(height: 18),
                             
@@ -210,11 +221,13 @@ class _RegisterPageState extends State<RegisterPage> {
     required IconData icon,
     bool isPassword = false,
     TextInputType type = TextInputType.text,
+    List<TextInputFormatter>? formatters,
   }) {
     return TextField(
       controller: controller,
       obscureText: isPassword ? isPasswordHidden : false,
       keyboardType: type,
+      inputFormatters: formatters,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, color: const Color(0xFF764BA2)),
@@ -238,6 +251,29 @@ class _RegisterPageState extends State<RegisterPage> {
           borderSide: const BorderSide(color: Color(0xFF764BA2), width: 2),
         ),
       ),
+    );
+  }
+}
+
+class NpmInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    final newText = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (newText.length > 13) return oldValue;
+
+    var buffer = StringBuffer();
+    for (int i = 0; i < newText.length; i++) {
+      if (i == 2 || i == 6 || i == 7) {
+        buffer.write('.');
+      }
+      buffer.write(newText[i]);
+    }
+
+    String formatted = buffer.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }
