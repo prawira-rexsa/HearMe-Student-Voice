@@ -3,8 +3,10 @@ import 'package:http/http.dart' as http;
 import '../models/complaint.dart';
 
 class ApiService {
+  // TODO: Ganti dengan MockAPI endpoint kamu sendiri
+  // Buat project baru di https://mockapi.io dan sesuaikan URL-nya
   static const String baseUrl =
-      'https://69f4355ebd2396bf5310ad9f.mockapi.io/api/v1/complaint';
+      'https://YOUR_MOCKAPI_ID.mockapi.io/api/v1/complaint';
 
   // GET all
   static Future<List<Complaint>> getComplaints() async {
